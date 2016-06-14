@@ -1,0 +1,10 @@
+Package: com.ps.camswitchdown
+Name: CamSwitchDown
+Depends: mobilesubstrate, firmware (>= 9.0), firmware (<< 10.0)
+Conflicts: gsc.ipad
+Version: 1.0
+Architecture: iphoneos-arm
+Description: iOS 10 Flip button <-> Filter button swap.
+Maintainer: PoomSmart
+Author: PoomSmart
+Section: Tweaks
