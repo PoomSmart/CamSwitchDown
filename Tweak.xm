@@ -64,7 +64,7 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 - (UIImage *)_filterImage
 {
 	NSBundle *bundle = [CAMCameraUIFrameworkBundle() retain];
-    UIImage *image = [[UIImage imageNamed:@"CAMFlipButton2" inBundle:bundle] retain];
+	UIImage *image = [[UIImage imageNamed:@"CAMFlipButton2" inBundle:bundle] retain];
     UIImage *trueImage = [[image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] retain];
     [image release];
     [bundle release];
@@ -103,14 +103,14 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 - (void)_updateFilterButtonOnState
 {
 	// Have to set filter button state, but we do so for flip button instead
-    [MSHookIvar<CAMFilterButton *>(self, "__flipButton") setOn:[self _effectFilterTypeForMode:self._currentMode] ? 1 : 0];
+	[MSHookIvar<CAMFilterButton *>(self, "__flipButton") setOn:[self _effectFilterTypeForMode:self._currentMode] ? 1 : 0];
 }
 
 - (void)_handleFilterButtonTapped:(id)arg1
 {
 	// This is flip button
 	int desiredCaptureDevice = self._desiredCaptureDevice;
-    [self _handleUserChangedFromDevice:desiredCaptureDevice toDevice:desiredCaptureDevice == 1 ? 0 : 1];
+	[self _handleUserChangedFromDevice:desiredCaptureDevice toDevice:desiredCaptureDevice == 1 ? 0 : 1];
 }
 
 - (void)_handleFlipButtonReleased:(id)arg1
@@ -124,6 +124,42 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 	if (!showingGrid)
 		[self _setNumFilterSelectionsBeforeCapture:[self _numFilterSelectionsBeforeCapture] + 1];
 	[renderer release];
+}
+
+/*
+ ebx = arg3;
+    var_D = [UIApplication shouldMakeUIForDefaultPNG];
+    eax = [_cmd _isCapturingFromTimer];
+    ecx = 0x1;
+    if (ebx <= 0x5) {
+            eax = eax | var_D | 0xe >> ebx & 0x1;
+            COND = eax != 0x0;
+            ecx = COND ? 0x1 : 0x0;
+    }
+    eax = ecx & 0xff;
+    */
+
+- (BOOL)_shouldHideFlipButtonForMode:(int)mode device:(int)device
+{
+	// Should we hide filter button?
+	return (mode <= 5 && ([self _isCapturingFromTimer] || [UIApplication shouldMakeUIForDefaultPNG])) || [self._topBar shouldHideFlipButtonForMode:mode device:device] || (mode == 1 || mode == 2 || mode == 4 || mode == 6);
+}
+
+- (BOOL)_shouldHideFilterButtonForMode:(int)mode device:(int)device
+{
+	// Should we hide flip button?
+	CAMCaptureCapabilities *capabilities = [[CAMCaptureCapabilities capabilities] retain];
+	CUCaptureController *captureController = [self._captureController retain];
+	BOOL value = YES;
+	if ([capabilities isBackCameraSupported])
+		value = ![capabilities isFrontCameraSupported];
+	BOOL value2 = YES;
+	if (mode <= 6)
+		value2 = mode == 2;
+	value = [captureController isCapturingVideo] || value2 || [UIApplication shouldMakeUIForDefaultPNG] || [captureController isCapturingTimelapse] || [self _isCapturingFromTimer];
+	[captureController release];
+	[capabilities release];
+	return value || mode == 4;
 }
 
 %end

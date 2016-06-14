@@ -1,7 +1,7 @@
 DEBUG = 0
 SDKVERSION = 9.0
 GO_EASY_ON_ME = 1
-PACKAGE_VERSION = 1.0
+PACKAGE_VERSION = 1.1
 
 include $(THEOS)/makefiles/common.mk
 
