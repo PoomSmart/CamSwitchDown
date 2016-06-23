@@ -129,7 +129,7 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 - (BOOL)_shouldHideFlipButtonForMode:(NSInteger)mode device:(NSInteger)device
 {
 	// Should we hide filter button?
-	return [self _isCapturingFromTimer] || [UIApplication shouldMakeUIForDefaultPNG] || [self._topBar shouldHideFlipButtonForMode:mode device:device];
+	return [self _isCapturingFromTimer] || [UIApplication shouldMakeUIForDefaultPNG] || [self._topBar shouldHideFlipButtonForMode:mode device:device] || (mode == 1 || mode == 2 || mode == 3 || mode == 6);
 }
 
 - (BOOL)_shouldHideFilterButtonForMode:(NSInteger)mode device:(NSInteger)device
@@ -143,7 +143,7 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 	value = [captureController isCapturingVideo] || [UIApplication shouldMakeUIForDefaultPNG] || [captureController isCapturingTimelapse] || [self _isCapturingFromTimer];
 	[captureController release];
 	[capabilities release];
-	return value || mode == 3 || mode > 5;
+	return value || mode == 2 || mode == 3 || mode > 5;
 }
 
 %end
@@ -152,75 +152,3 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 {
 	%init;
 }
-
-// Hardcore code, shall we really use?
-
-/*@interface CAMTopBar (Addition)
-@property (retain, nonatomic) CAMFilterButton *filterButton;
-@property (retain, nonatomic) CAMFilterButton *_filterButton;
-@end
-
-BOOL override = NO;
-
-%hook CAMTopBar
-
-%property (retain, nonatomic) CAMFilterButton *_filterButton;
-
-%new
-- (CAMFilterButton *)filterButton
-{
-	return self._filterButton;
-}
-
-%new
-- (void)setFilterButton:(CAMFilterButton *)filterButton
-{
-	if (self._filterButton == filterButton)
-		return;
-	self._filterButton = filterButton;
-	CAMFlipButton *flipButton = [self.flipButton retain];
-	MSHookIvar<CAMFlipButton *>(self, "_flipButton") = (CAMFlipButton *)filterButton;
-	self.flipButton = (CAMFlipButton*)filterButton;
-	MSHookIvar<CAMFlipButton *>(self, "_flipButton") = flipButton;
-	[flipButton release];
-}
-
-%end
-
-%hook CAMBottomBar
-
-+ (BOOL)wantsVerticalBarForTraitCollection:(UITraitCollection *)traitCollection
-{
-	return override ? YES : %orig;
-}
-
-- (void)_layoutFlipButtonForTraitCollection:(UITraitCollection *)traitCollection
-{
-	override = YES;
-	%orig;
-	override = NO;
-}
-
-%end
-
-%hook CAMViewfinderViewController
-
-- (void)_embedFlipButtonWithTraitCollection:(UITraitCollection *)traitCollection
-{
-	override = YES;
-	%orig;
-	override = NO;
-}
-
-- (void)_embedFilterButtonWithTraitCollection:(UITraitCollection *)traitCollection
-{
-	CAMViewfinderView *viewfinderView = [self.viewfinderView retain];
-	CAMTopBar *topBar = [self._topBar retain];
-	CAMFilterButton *filterButton = [self._filterButton retain];
-	[topBar setFilterButton:filterButton];
-	[filterButton release];
-	[topBar release];
-	[viewfinderView release];
-}
-
-%end*/
