@@ -7,13 +7,27 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 - (UIImage *)_flipOnImage;
 @end
 
+@interface CAMFlipButton (CamSwitchDown)
+- (void)cms_updateImage:(BOOL)isVideo;
+- (UIImage *)_flipImage2;
+@end
+
+@interface CAMFilterButton (CamSwitchDown)
+- (void)cms_updateImage:(BOOL)isVideo;
+- (UIImage *)_filterImage2;
+@end
+
+#define isPhotoMode(mode) (mode == 0 || mode == 4)
+#define isVideoMode(mode) (mode == 1 || mode == 2 || mode == 3 || mode == 6)
+
 // Swap them? Very very confusing
 // Just reverse and copy API from iOS 9 CameraUI.framework, so it does not support iOS <= 8 yet
 // Currently supports only non-iPad devices running iOS 9
 
 %hook CAMFlipButton
 
-- (UIImage *)_flipImage
+%new
+- (UIImage *)_flipImage2
 {
 	NSBundle *bundle = [CAMCameraUIFrameworkBundle() retain];
     UIImage *image = [[UIImage imageNamed:@"CAMFilterButton2" inBundle:bundle] retain];
@@ -25,7 +39,6 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
     [bundle release];
 	return [trueImage autorelease];
 }
-
 
 %new
 - (UIImage *)_flipOnImage
@@ -57,11 +70,27 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 	[filterOnImage release];
 }
 
+%new
+- (void)cms_updateImage:(BOOL)isVideo
+{
+	UIImage *filterImage = isVideo ? [[self _flipImage] retain] : [[self _flipImage2] retain];
+	//UIImage *filterOnImage = isVideo ? [[self _flipOnImage] retain] : [[self _flipOnImage2] retain];
+	[self setImage:filterImage forState:0];
+	[self setImage:filterImage forState:2];
+	[filterImage release];
+	self.tintColor = UIColor.whiteColor;
+	/*[self setImage:filterOnImage forState:4];
+	[self setImage:filterOnImage forState:5];
+	[self setImage:filterOnImage forState:6];
+	[filterOnImage release];*/
+}
+
 %end
 
 %hook CAMFilterButton
 
-- (UIImage *)_filterImage
+%new
+- (UIImage *)_filterImage2
 {
 	NSBundle *bundle = [CAMCameraUIFrameworkBundle() retain];
 	UIImage *image = [[UIImage imageNamed:@"CAMFlipButton2" inBundle:bundle] retain];
@@ -80,6 +109,15 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 	[self setImage:flipImage forState:0];
 	[self setImage:flipImage forState:2];
 	[flipImage release];
+}
+
+%new
+- (void)cms_updateImage:(BOOL)isVideo
+{
+	UIImage *image = isVideo ? [[self _filterImage] retain] : [[self _filterImage2] retain];
+	[self setImage:image forState:0];
+	[self setImage:image forState:2];
+	[image autorelease];
 }
 
 %end
@@ -102,12 +140,20 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 
 - (void)_updateFilterButtonOnState
 {
+	if (isVideoMode(self._currentMode)) {
+		%orig;
+		return;
+	}
 	// Have to set filter button state, but we do so for flip button instead
 	[MSHookIvar<CAMFilterButton *>(self, "__flipButton") setOn:[self _effectFilterTypeForMode:self._currentMode] ? 1 : 0];
 }
 
 - (void)_handleFilterButtonTapped:(id)arg1
 {
+	if (isVideoMode(self._currentMode)) {
+		%orig;
+		return;
+	}
 	// This is flip button
 	NSInteger desiredCaptureDevice = self._desiredCaptureDevice;
 	[self _handleUserChangedFromDevice:desiredCaptureDevice toDevice:desiredCaptureDevice == 1 ? 0 : 1];
@@ -115,6 +161,10 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 
 - (void)_handleFlipButtonReleased:(id)arg1
 {
+	if (isVideoMode(self._currentMode)) {
+		%orig;
+		return;
+	}
 	// This is filter button
 	[self _collapseExpandedButtonsAnimated:YES];
 	CAMPreviewViewController *previewViewController(MSHookIvar<CAMPreviewViewController *>(self, "__previewViewController"));
@@ -128,12 +178,16 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 
 - (BOOL)_shouldHideFlipButtonForMode:(NSInteger)mode device:(NSInteger)device
 {
+	if (isVideoMode(mode))
+		return %orig;
 	// Should we hide filter button?
-	return [self _isCapturingFromTimer] || [UIApplication shouldMakeUIForDefaultPNG] || [self._topBar shouldHideFlipButtonForMode:mode device:device] || (mode == 1 || mode == 2 || mode == 3 || mode == 6);
+	return [self _isCapturingFromTimer] || [UIApplication shouldMakeUIForDefaultPNG] || [self._topBar shouldHideFlipButtonForMode:mode device:device] || isVideoMode(mode);
 }
 
 - (BOOL)_shouldHideFilterButtonForMode:(NSInteger)mode device:(NSInteger)device
 {
+	if (isVideoMode(mode))
+		return %orig;
 	// Should we hide flip button?
 	CAMCaptureCapabilities *capabilities = [[CAMCaptureCapabilities capabilities] retain];
 	CUCaptureController *captureController = [self._captureController retain];
@@ -144,6 +198,13 @@ extern "C" NSBundle *CAMCameraUIFrameworkBundle();
 	[captureController release];
 	[capabilities release];
 	return value || mode == 2 || mode == 3 || mode > 5;
+}
+
+- (void)_updateEnabledControlsWithReason:(id)arg1 forceLog:(BOOL)arg2
+{
+	%orig;
+	[self._filterButton cms_updateImage:isVideoMode(self._currentMode)];
+	[self._flipButton cms_updateImage:isVideoMode(self._currentMode)];
 }
 
 %end
