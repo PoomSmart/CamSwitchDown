@@ -9,5 +9,3 @@ CamSwitchDown_FILES = Tweak.xm
 CamSwitchDown_PRIVATE_FRAMEWORKS = CameraUI
 
 include $(THEOS_MAKE_PATH)/tweak.mk
-
-
