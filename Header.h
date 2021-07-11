@@ -1,5 +1,8 @@
 #define UNRESTRICTED_AVAILABILITY
-#import "../PS.h"
+#import "../PSHeader/Availability.h"
+#import "../PSHeader/CameraApp/CameraApp.h"
+#import "../PSHeader/PhotoLibrary/PhotoLibrary.h"
+#import "../PSHeader/iOSVersions.h"
 #import <UIKit/UIApplication+Private.h>
 
 @interface CAMFlipButton (ToBeFilterButton)
@@ -19,4 +22,4 @@
 
 #define isPhotoMode(mode) (mode == 0 || mode == 4)
 #define isVideoMode(mode) (mode == 1 || mode == 2 || mode == 3 || mode == 6)
-#define cameraBundle [NSBundle bundleForClass:NSClassFromString(@ "CAMShutterButton")]
+#define cameraBundle [NSBundle bundleForClass:NSClassFromString(@"CAMShutterButton")]

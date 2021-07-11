@@ -1,6 +1,6 @@
 Package: com.ps.camswitchdown
 Name: CamSwitchDown
-Depends: mobilesubstrate, firmware (>= 7.0), firmware (<< 10.0)
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 7.0), firmware (<< 10.0)
 Conflicts: gsc.ipad
 Version: 1.0.0
 Architecture: iphoneos-arm
